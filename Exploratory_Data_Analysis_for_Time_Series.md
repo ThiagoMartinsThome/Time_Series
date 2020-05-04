@@ -42,3 +42,53 @@ In any case, it is always convenient to perform a visual analysis of the data.
 It is often the case that a time series can be made stationary enough with a few simple transformations. A log transformation and a square root transformation are two popular options, particularly in the case of changing variance over time. Likewise, removing a trend is most commonly done by differencing. Sometimes a series must be differenced more than once. However, if you find yourself differencing too much (more than two or three times) it is unlikely that you can fix your stationarity problem with differencing.
 
 Another common but distinct assumption is the normality of the distribution of the input variables or predicted variable. In such cases, other transformations may be necessary. A common one is the Box Cox transformation, which is implemented in scipy.stats in Python. The transformation makes non-normally distributed data (skewed data) more normal. However, just because you can transform your data doesn’t mean you should. Think carefully about the meaning of the distances between data points in your original data set before transforming them, and make sure, regardless of your task, that transformations preserve the most important information.
+
+ROLLING WINDOWS (Moving averages)
+
+Is a time series function where you can aggregate data either to compress it (downsampling), to smooth it or for informative exploratory visualizations.
+
+In a very simple words we take a window size of k at a time and perform some desired mathematical operation on it. A window of size k means k consecutive values at a time. In a very simple case all the ‘k’ values are equally weighted.
+
+```python
+df.rolling(3).mean() 
+```
+
+EXPANDING WINDOWS
+
+Expanding windows are less commonly used in time series analysis than rolling windows because their proper application is more limited. Expanding windows make sense only in cases where you are estimating a summary statistic that you believe is a stable process rather than evolving over time or oscillating significantly. An expanding window starts with a given minimum size, but as you progress into the time series, it grows to include every point up to a given time rather than only a finite and constant size.
+
+
+```python
+df.expanding(2).sum()
+```
+THE AUTOCORRELATION FUNCTION (ACF)
+
+Autocorrelation, also known as serial correlation, is the correlation of a signal with a delayed copy of itself as a function of the delay. Informally, it is the similarity between observations as a function of the time lag between them.
+
+```python
+from statsmodels.tsa.stattools import acf
+
+acf(y, nlags = 30, unbiased = True, fft = False)
+
+from statsmodels.graphics.tsaplots import plot_acf
+
+plot_acf(y, lags = 20, unbiased = True);
+```
+From the visual analysis of the autocorrelation function we can determine the periodicity of our time series.
+
+THE PARTIAL AUTOCORRELATION FUNCTION (PACF)
+
+It is defined as the set of results of calculating the autocorrelation of the series with itself displaced by a number of lags, eliminating the influence of minor lags.
+
+The partial autocorrelation function reveals which correlations are “true” informative correlations for specific lags rather than redundancies.
+
+```python
+from statsmodels.tsa.stattools import pacf
+from statsmodels.graphics.tsaplots import plot_pacf
+
+pacf(x, nlags = 29, method = "ywm")
+plot_pacf(x, lags = 40, method = "ywm");
+```
+WHITE NOISE
+
+Time series that has mean value, constant variance and null autocorrelation for all lags.
