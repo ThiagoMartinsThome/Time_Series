@@ -18,7 +18,7 @@ Example:
 from statsmodels.tsa.stattools import adfuller
 
 adfuler()
-```
+'''
 out:
 (-1.8870498112252774,
  0.3381775973004306,
@@ -28,6 +28,33 @@ out:
   '10%': -2.5696661916864083,
   '5%': -2.8669778698997543},
  3012.7890909742596)
+ '''
+ 
+# Function to test the Stationary and print a Fuller table
+def test_stationarity(timeseries):
+    
+    #Determing rolling statistics
+    rolmean = pd.rolling_mean(timeseries, window=12)
+    rolstd = pd.rolling_std(timeseries, window=12)
+
+    #Plot rolling statistics:
+    orig = plt.plot(timeseries, color='blue',label='Original')
+    mean = plt.plot(rolmean, color='red', label='Rolling Mean')
+    std = plt.plot(rolstd, color='black', label = 'Rolling Std')
+    plt.legend(loc='best')
+    plt.title('Rolling Mean & Standard Deviation')
+    plt.show(block=False)
+    
+    #Perform Dickey-Fuller test:
+    print 'Results of Dickey-Fuller Test:'
+    dftest = adfuller(timeseries, autolag='AIC')
+    dfoutput = pd.Series(dftest[0:4], index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
+    for key,value in dftest[4].items():
+        dfoutput['Critical Value (%s)'%key] = value
+    print dfoutput
+
+```
+
 
 This test seeks to determine the existence of unit roots in the series or not (the null hypothesis of this test is that there is a unit root, that is, that the series is not stationary).
 
@@ -92,3 +119,104 @@ plot_pacf(x, lags = 40, method = "ywm");
 WHITE NOISE
 
 Time series that has mean value, constant variance and null autocorrelation for all lags.
+
+
+TRANSFORMATIONS
+
+Estimating & Eliminating Trend
+
+One of the first tricks to reduce trend can be transformation. For that we can apply transformation which penalize higher values more than smaller values. These can be taking a log, square root, cube root, etc. 
+
+  - Log transformation:
+```pyhton
+ts_log = np.log(ts)
+plt.plot(ts_log)
+```
+Ususaly with this transformation is easy to see a forward trend in the data. But its not very intuitive in presence of noise. So we can use some techniques to estimate or model this trend and then remove it from the series. There can be many ways of doing it and some of most commonly used are:
+
+  - Aggregation – taking average for a time period like monthly/weekly averages
+  - Smoothing – taking rolling averages
+  - Polynomial Fitting – fit a regression model
+
+  - Moving Average:
+  
+```python
+moving_avg = pd.rolling_mean(ts_log,12)
+plt.plot(ts_log)
+plt.plot(moving_avg, color='red')
+
+#Difference
+ts_log_moving_avg_diff = ts_log - moving_avg
+ts_log_moving_avg_diff.dropna(inplace=True)
+test_stationarity(ts_log_moving_avg_diff) #Code example in fuller topic
+```
+
+However, a drawback in this particular approach is that the time-period has to be strictly defined. In this case we can take yearly averages but in complex situations like forecasting a stock price, its difficult to come up with a number. So we take a ‘weighted moving average’ where more recent values are given a higher weight. There can be many technique for assigning weights. A popular one is exponentially weighted moving average where weights are assigned to all the previous values with a decay factor.
+
+```python
+expwighted_avg = pd.ewm(ts_log, halflife=12).mean()
+plt.plot(ts_log)
+plt.plot(expwighted_avg, color='red')
+
+ts_log_ewma_diff = ts_log - expwighted_avg
+test_stationarity(ts_log_ewma_diff)
+````
+  - Differencing:
+  
+Taking the differece with a particular time lag.
+
+```python
+ts_log_diff = ts_log - ts_log.shift()
+plt.plot(ts_log_diff)
+
+ts_log_diff.dropna(inplace=True)
+test_stationarity(ts_log_diff)
+````
+
+  - Percentaje change:
+  
+```python
+ts_pct = ts.pct_change().dropna()
+plt.plot(ts_pct)
+```
+
+Other transformations can be:
+
+  - Calculate the square root of the data: np.sqrt (ts)
+  - Consider proportional change: ts.shift (1) / ts
+  - The call log-return: np.log (ts / ts.shift (1))
+  
+  
+  - Decomposition:
+
+Modeling both trend and seasonality and removing them from the model.
+
+```python
+from statsmodels.tsa.seasonal import seasonal_decompose
+decomposition = seasonal_decompose(ts_log)
+#decomposition = seasonal_decompose(x = candy.production.to_timestamp())
+#Is necesary that the index must be converted to timestamp
+
+trend = decomposition.trend
+seasonal = decomposition.seasonal
+residual = decomposition.resid
+
+plt.subplot(411)
+plt.plot(ts_log, label='Original')
+plt.legend(loc='best')
+plt.subplot(412)
+plt.plot(trend, label='Trend')
+plt.legend(loc='best')
+plt.subplot(413)
+plt.plot(seasonal,label='Seasonality')
+plt.legend(loc='best')
+plt.subplot(414)
+plt.plot(residual, label='Residuals')
+plt.legend(loc='best')
+plt.tight_layout()
+
+ts_log_decompose = residual
+ts_log_decompose.dropna(inplace=True)
+test_stationarity(ts_log_decompose)
+```
+
