@@ -134,9 +134,9 @@ plt.plot(ts_log)
 ```
 Ususaly with this transformation is easy to see a forward trend in the data. But its not very intuitive in presence of noise. So we can use some techniques to estimate or model this trend and then remove it from the series. There can be many ways of doing it and some of most commonly used are:
 
-  - Aggregation – taking average for a time period like monthly/weekly averages
-  - Smoothing – taking rolling averages
-  - Polynomial Fitting – fit a regression model
+    - Aggregation – taking average for a time period like monthly/weekly averages
+    - Smoothing – taking rolling averages
+    - Polynomial Fitting – fit a regression model
 
   - Moving Average:
   
@@ -182,9 +182,9 @@ plt.plot(ts_pct)
 
 Other transformations can be:
 
-  - Calculate the square root of the data: np.sqrt (ts)
-  - Consider proportional change: ts.shift (1) / ts
-  - The call log-return: np.log (ts / ts.shift (1))
+    - Calculate the square root of the data: np.sqrt (ts)
+    - Consider proportional change: ts.shift (1) / ts
+    - The call log-return: np.log (ts / ts.shift (1))
   
   
   - Decomposition:
