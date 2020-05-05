@@ -77,6 +77,10 @@ The AR (1) model is also called the Markov Chain.
 
 These values are also often referred to as *shocks*.
 
+      Notice:
+      p – The lag value where the PACF chart crosses the upper confidence interval for the first time. 
+      q – The lag value where the ACF chart crosses the upper confidence interval for the first time. 
+
 ```python
 
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -190,6 +194,10 @@ MA (2): Rt = m1.εt-1 + m2.εt-2 + εt
 
 MA (q): Rt = m1.εt-1 + m2.εt-2 + ... + mq.εt-q + εt
 
+      Notice:
+      p – The lag value where the PACF chart crosses the upper confidence interval for the first time. 
+      q – The lag value where the ACF chart crosses the upper confidence interval for the first time. 
+
 ```phyton
 model = SARIMAX(df, order = (0, 0, 3)).fit()  
 
@@ -247,6 +255,10 @@ ARMA (1, 1): Rt = a1.Rt-1 + m1.εt-1 + εt
 
 ARMA (p, q): AR (p): Rt = a1.Rt-1 + a2.Rt-2 + ap.Rt-p + Rt + m1.εt-1 + m2.εt-2 + ... + mq.εt-q + εt
 
+      Notice:
+      p – The lag value where the PACF chart crosses the upper confidence interval for the first time. 
+      q – The lag value where the ACF chart crosses the upper confidence interval for the first time. 
+
 ```python
 model = SARIMAX(df, order = (2, 0, 3)).fit()
 model.summary()
@@ -286,3 +298,223 @@ ax.fill_between(lower.index, lower, upper, alpha = 0.4)
 plt.show()
 ```
 
+ARMAX
+
+An extension of the ARMA model is one that includes external (exogenous) data to create the model. For example, we can have a time series in which, for each day of the year, the sales made are indicated. But we could also include information about what day of the week each day is, or what days are holidays.
+
+The result is a kind of combination between an ARMA model and a linear regression.
+
+The equations that define an ARMA model and another ARMAX model (in both cases of order (1, 1)) are the following:
+
+ARMA (1,1): yt = a1yt-1 + m1εt-1 + εt
+
+ARMAX (1,1): yt = a1yt-1 + m1εt-1 + εt + x1zt
+
+The ARMAX model is created with the same ARMA class that we have seen adding the exog parameter.
+
+For example, let's calculate the evolution of the following sales adding as exogenous information if it was a holiday or not:
+
+```python
+sales = pd.Series([10, 22, 15, 10, 25, 30, 18])
+sales.plot();
+
+holidays = pd.Series([1, 0, 0, 0, 0, 1, 1])
+model = SARIMAX(sales, order = (2, 0, 1), exog = holidays).fit()
+exog_data = np.array([0, 0]).reshape(-1, 1)
+prediction = model.get_forecast(steps = 2, exog = exog_data)
+prediction.predicted_mean
+prediction.conf_int()
+```
+
+### Autoregressive Integrated Moving Average Models
+
+The difference between an ARMA model and an ARIMA model is that the ARIMA model includes the term integrated, which refers to how many times the modeled time series must be differenced to produce stationarity.
+
+Differencing is converting a time series of values into a time series of changes in values over time. Most often this is done by calculating pairwise differences of adjacent points in time, so that the value of the differenced series at a time t is the value at time t minus the value at time t – 1. However, differencing can also be performed on different lag windows, as convenient.
+The ARIMA model is specified in terms of the parameters (p, d, q). We select the values of p, d, and q that are appropriate given the data we have. "d" is the number of times the series is to be differentiated.
+
+Here are some well-known examples from the Wikipedia description of ARIMA models:
+
+  - ARIMA(0, 0, 0) is a white noise model.
+
+  - ARIMA(0, 1, 0) is a random walk, and ARIMA(0, 1, 0) with a nonzero constant is a random walk with drift.
+
+  - ARIMA(0, 1, 1) is an exponential smoothing model, and an ARIMA(0, 2, 2) is the same as Holt’s linear method, which extends exponential smoothing to data with a trend, so that it can be used to forecast data with an underlying trend.
+
+The order parameter is a tuple (p, d, q) in which p is the order of the AR model, q the order of the MA model and d the number of times the series is to be differentiated.
+
+```python
+
+model = SARIMAX(candy, order = (3, 1, 2)).fit()
+prediction = model.get_forecast(steps = 24)
+lower = prediction.conf_int()["lower production"]
+upper = prediction.conf_int()["upper production"]
+prediction.predicted_mean.head()
+
+```
+
+### Seasonal Autoregressive Integrated Moving Average Models
+
+Now that we are able to extract seasonality from a time series, we can use it to improve our predictions. For this we will make use of the SARIMA or "Seasonal ARIMA" model.
+
+Training a SARIMA model is like training two ARIMA models: one for the seasonal part and the other for the rest of the information. That is why we will have not one, but two orders: (p, d, q) for the ARIMA model with non-seasonal components, and (P, D, Q) S for the ARIMA model with seasonal components, with S being periodicity value (that is, 7 arguments are required).
+
+      S is an integer giving the periodicity (number of periods in season), often it is 4 for quarterly data or 12 for monthly data. Default is no seasonal effect.
+
+Comparing the expressions of the ARIMA and SARIMA models:
+
+  - ARIMA (2, 0, 1): yt = a1yt-1 + a2yt-2 + m1εt-1 + εt
+
+  - SARIMA (0, 0, 0) (2, 0, 1) 7: yt = a7yt-7 + a14yt-14 + m7εt-7 + εt
+
+The previous ARIMA model will be able to capture patterns from one period to the next, but will not be able to capture information regarding periodicity. In contrast, the SARIMA model shown may capture seasonal patterns, but not patterns that follow data from one lag to the next.
+
+Adding both approaches, we will be able to capture all the existing patterns.
+
+The SARIMAX class supports this functionality, being the way of use is very similar to what has already been seen:
+
+model = SARIMAX (dataframe, order = (p, i, q), seasonal_order = (P, I, Q, S), trend = "c")
+
+The trend parameter is used to indicate to the algorithm that our data is not centered around the zero value.
+
+      TREND - Parameter controlling the deterministic trend polynomial 𝐴(𝑡). Can be specified as a string where ‘c’ indicates a constant (i.e. a degree zero component of the trend polynomial), ‘t’ indicates a linear trend with time, and ‘ct’ is both. Can also be specified as an iterable defining the polynomial as in numpy.poly1d, where [1,1,0,1] would denote 𝑎+𝑏𝑡+𝑐𝑡3. Default is to not include a trend component.
+
+```python
+model = SARIMAX(df.to_timestamp(), order = (3, 1, 2), seasonal_order = (1, 1, 2, 12)).fit()
+
+# Convert the index of the dataframe to timestamp to avoid problems with the plot_diagnostics function
+#Again, we must ensure that the seasonal component is stationary, 
+#for which we must also resort to the appropriate transformations.
+
+prediction = model.get_forecast(steps = 12)
+lower = prediction.conf_int()["lower production"]
+upper = prediction.conf_int()["upper production"]
+df.truncate(before = "2010").plot()
+prediction.predicted_mean.plot()
+plt.fill_between(lower.index, lower, upper, alpha = 0.4)
+plt.show()
+
+```
+ARIMA models are trained using the Maximum Likelihood procedure, which looks for those parameters that maximize the probability that the training data is what it really is.
+
+Some of this information is found in the training summary:
+
+```python
+model.summary()
+
+'''
+Statespace Model Results
+Dep. Variable:	production	No. Observations:	548
+Model:	SARIMAX(3, 1, 2)x(1, 1, 2, 12)	Log Likelihood	-1466.780
+Date:	Sat, 02 May 2020	AIC	2951.561
+Time:	15:56:54	BIC	2990.101
+Sample:	01-01-1972	HQIC	2966.640
+- 08-01-2017		
+Covariance Type:	opg		
+coef	std err	z	P>|z|	[0.025	0.975]
+ar.L1	0.2114	0.281	0.753	0.452	-0.339	0.762
+ar.L2	0.3559	0.197	1.810	0.070	-0.030	0.741
+ar.L3	0.1679	0.049	3.460	0.001	0.073	0.263
+ma.L1	-0.5107	0.284	-1.801	0.072	-1.067	0.045
+ma.L2	-0.4389	0.265	-1.654	0.098	-0.959	0.081
+ar.S.L12	-0.0014	0.425	-0.003	0.997	-0.834	0.831
+ma.S.L12	-0.6382	0.421	-1.515	0.130	-1.464	0.187
+ma.S.L24	-0.1083	0.302	-0.359	0.720	-0.700	0.483
+sigma2	13.8135	0.710	19.467	0.000	12.423	15.204
+Ljung-Box (Q):	80.35	Jarque-Bera (JB):	26.52
+Prob(Q):	0.00	Prob(JB):	0.00
+Heteroskedasticity (H):	1.32	Skew:	-0.25
+Prob(H) (two-sided):	0.06	Kurtosis:	3.97
+
+
+Warnings:
+[1] Covariance matrix calculated using the outer product of gradients (complex-step).
+'''
+```
+The Ljung-Box test starts from the null hypothesis that the residuals have a null correlation for all lags. Prob (Q) is the corresponding p-value.
+
+The Jarque-Bera (JB) test starts from the null hypothesis that the residuals have a Gaussian distribution, and Prob (JB) is their p-value.
+
+AUTOMATION OF OPTIMAL ORDER CALCULATION
+
+Although we can still use loops to calculate the optimal orders, now that we have 7 orders to define the complete model, this method is impractical. Fortunately the pmdarima library offers us a function that does this job for us, the auto_arima function.
+
+      http://alkaline-ml.com/pmdarima/1.0.0/modules/generated/pmdarima.arima.auto_arima.html
+
+```python
+# install and import the library
+!pip install pmdarima
+import pmdarima as pm
+
+model = pm.auto_arima(
+    df,
+    m = 12,
+    suppress_warnings=True
+)
+```
+This function returns an object of the ARIMA class, implementation of the pmdarima algorithm.
+
+
+
+```python
+model.summary()
+'''
+Statespace Model Results
+Dep. Variable:	y	No. Observations:	548
+Model:	SARIMAX(1, 1, 2)x(2, 0, 1, 12)	Log Likelihood	-1511.345
+Date:	Sat, 02 May 2020	AIC	3038.689
+Time:	18:11:06	BIC	3073.125
+Sample:	0	HQIC	3052.150
+- 548		
+Covariance Type:	opg		
+coef	std err	z	P>|z|	[0.025	0.975]
+intercept	4.07e-05	0.000	0.189	0.850	-0.000	0.000
+ar.L1	0.8555	0.039	21.680	0.000	0.778	0.933
+ma.L1	-1.1563	0.057	-20.302	0.000	-1.268	-1.045
+ma.L2	0.1766	0.051	3.465	0.001	0.077	0.277
+ar.S.L12	1.1673	0.058	20.153	0.000	1.054	1.281
+ar.S.L24	-0.1721	0.057	-3.017	0.003	-0.284	-0.060
+ma.S.L12	-0.7900	0.039	-20.120	0.000	-0.867	-0.713
+sigma2	13.9257	0.704	19.792	0.000	12.547	15.305
+Ljung-Box (Q):	96.75	Jarque-Bera (JB):	33.62
+Prob(Q):	0.00	Prob(JB):	0.00
+Heteroskedasticity (H):	1.18	Skew:	-0.18
+Prob(H) (two-sided):	0.26	Kurtosis:	4.16
+
+
+Warnings:
+[1] Covariance matrix calculated using the outer product of gradients (complex-step).
+'''
+```
+
+```python
+fig = model.plot_diagnostics()
+fig.set_size_inches(15, 9)
+plt.show();
+
+forecast_mean, conf_int = model.predict(24, return_conf_int = True)
+
+forecast_mean
+conf_int[:5]
+
+forecast_lower = conf_int[:, 0]
+forecast_upper = conf_int[:, 1]
+
+dates = pd.period_range(start = df.index[-1], periods = 25, freq = "M")[1:]
+
+forecast = pd.Series(forecast_mean, index = dates)
+
+fig, ax = plt.subplots()
+df.truncate(before = "2010").plot(ax = ax)
+forecast.plot(ax = ax, color = "red")
+plt.fill_between(dates, forecast_lower, forecast_upper, color = "lightblue", alpha = 0.6)
+plt.show()
+
+
+```
+
+
+
+```python
+
+```
