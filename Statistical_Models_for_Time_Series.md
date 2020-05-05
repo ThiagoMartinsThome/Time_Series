@@ -73,7 +73,7 @@ AR (p): Rt = a1.Rt-1 + a2.Rt-2 + ... + ap.Rt-p + εt
 
 The AR (1) model is also called the Markov Chain.
 
-εt is white noise: random values independent of the others ε, series with mean and constant variance and null autocorrelation for all lags.
+εt is white noise: random values independent of the others ε, series with mean and constant variance and null autocorrelation for all lags. 
 
 These values are also often referred to as *shocks*.
 
