@@ -1,5 +1,27 @@
 # Generating and Selecting Features for a Time Series
 
+## Important Libraries:
+
+TA-LIB:
+
+TA-Lib is widely used by trading software developers requiring to perform technical analysis of financial market data.
+
+      Includes 150+ indicators such as ADX, MACD, RSI, Stochastic, Bollinger Bands, etc.
+      Candlestick pattern recognition
+      Open-source API for C/C++, Java, Perl, Python and 100% Managed .NET
+
+THE TSFRESH PYTHON MODULE
+
+One particularly compelling example of automatic feature generation in Python is the tsfresh module, which implements a large and general set of features.
+
+THE CESIUM TIME SERIES ANALYSIS PLATFORM
+
+A more approachable but equally extensive catalog of generated features is the list implemented in the Cesium library.
+
+R’S TSFEATURES PACKAGE
+
+tsfeatures, developed by Rob Hyndman et al., is a convenient R package for generating a variety of commonly used and useful time series features. 
+
 ### List of Technical Market Indicators:
 
       1. Color coded UO: https://www.tradingview.com/v/CDJHwbyx/ 
