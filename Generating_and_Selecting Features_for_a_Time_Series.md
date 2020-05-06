@@ -1,5 +1,15 @@
 # Generating and Selecting Features for a Time Series
 
+
+
+Note that many of these values are not normalized, so that would be something we’d want to keep in mind were we using a technique that assumed normalized inputs.
+
+We should also confirm that we understand what our features are indicating and that our understanding matches what cesium computes.
+
+FEATURES SHOULD BE ERGODIC
+
+In choosing features to generate for a time series, be sure to select features that are ergodic, meaning that the values measured will each converge to a stable value as more data from the same process is collected. An example where this is not the case is a random walk, for which the measurement of the mean of the process is meaningless and will not be ergodic. The mean of a random walk will not converge to a specific value.
+
 ## Important Libraries:
 
 TA-LIB:
